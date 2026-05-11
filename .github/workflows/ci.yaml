@@ -39,7 +39,6 @@ jobs:
 
             sudo docker network create my3tier || true
 
-            # Run Postgres
             sudo docker rm -f my3tier-db || true
             sudo docker run -d --network my3tier --name my3tier-db \
               -e POSTGRES_USER=postgres \
@@ -48,11 +47,11 @@ jobs:
               -p 5432:5432 \
               postgres
 
-            # Espera o Postgres estar pronto
-            echo "Waiting for Postgres..."
-            sleep 10
+            echo "Waiting for Postgres to be ready..."
+            until sudo docker exec my3tier-db pg_isready -U postgres; do
+              sleep 2
+            done
 
-            # Run the API
             sudo docker rm -f my3tier-api || true
             sudo docker run -d --network my3tier --name my3tier-api \
               -p 5000:80 \
