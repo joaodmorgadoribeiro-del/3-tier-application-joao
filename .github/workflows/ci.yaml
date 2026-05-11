@@ -30,7 +30,6 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
-          run: |
           ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST bash << EOF
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
