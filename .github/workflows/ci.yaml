@@ -30,7 +30,32 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
+          run: |
           ssh -o StrictHostKeyChecking=no ubuntu@$EC2_HOST bash << EOF
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | sudo docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
             sudo docker pull $DOCKERHUB_USERNAME/basic3tier-api:latest
-            ...
+            sudo docker pull $DOCKERHUB_USERNAME/basic3tier-ui:latest
+
+            sudo docker network create my3tier || true
+
+            sudo docker rm -f my3tier-db || true
+            sudo docker run -d --network my3tier --name my3tier-db \
+              -e POSTGRES_USER=postgres \
+              -e POSTGRES_PASSWORD=admin123 \
+              -e POSTGRES_DB=basic3tier \
+              -p 5432:5432 \
+              postgres
+
+            sudo docker rm -f my3tier-api || true
+            sudo docker run -d --network my3tier --name my3tier-api \
+              -p 5000:80 \
+              -e ConnectionStrings__Basic3Tier="Host=my3tier-db;Port=5432;Database=basic3tier;Username=postgres;Password=admin123" \
+              $DOCKERHUB_USERNAME/basic3tier-api:latest
+
+            sudo docker rm -f my3tier-ui || true
+            sudo docker run -d --network my3tier --name my3tier-ui \
+              -p 80:80 \
+              -e API_URL="http://$EC2_HOST:5000/" \
+              $DOCKERHUB_USERNAME/basic3tier-ui:latest
           EOF
