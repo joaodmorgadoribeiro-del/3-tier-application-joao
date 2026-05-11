@@ -1,1 +1,39 @@
-# You can add a docker compose to run things locally and remotely if you want.
+services:
+  db:
+    image: postgres
+    container_name: my-db
+    networks:
+      - my3tier
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: basic3tier
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin123
+
+  api:
+    build: ./api
+    image: joao/api:latest
+    container_name: my-api
+    networks:
+      - my3tier
+    ports:
+      - "5000:80"
+    environment:
+      ConnectionStrings__Basic3Tier: "Host=my-db;Port=5432;Database=basic3tier;Username=postgres;Password=admin123"
+    depends_on:
+      - db
+
+  ui:
+    build: ./ui
+    image: joao/ui:latest
+    networks:
+      - my3tier
+    ports:
+      - "8085:80"
+    depends_on:
+      - api
+
+networks:
+  my3tier:
+    driver: bridge
